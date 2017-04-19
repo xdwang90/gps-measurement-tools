@@ -110,7 +110,7 @@ if ~bGotGpsEph
     %Now we have the zipped file from nasa. Unzip it:
     unzipCommand='uncompress';%edit if your platform uses something different 
     if any(strfind(computer,'PCWIN'))
-        unzipCommand='gunzip';
+        unzipCommand='unzip';
     end
     s = sprintf('%s "%s"',unzipCommand,zF{1}); %string for system command
     [sysFlag,result] = system(s);
