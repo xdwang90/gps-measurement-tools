@@ -1,21 +1,13 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+修改作者：张楷时
+修改时间：2017.04
+修改内容：重新GnssContainer类中的部分变量和方法，使之符合输出相应观测值的需求
  */
 
 package com.google.android.apps.location.gps.gnsslogger;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.location.GnssMeasurementsEvent;
 import android.location.GnssNavigationMessage;
@@ -28,6 +20,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -45,7 +38,7 @@ public class GnssContainer {
     private boolean mLogMeasurements = true;
     private boolean mLogStatuses = true;
     private boolean mLogNmeas = true;
-
+    private BluetoothAdapter BA = BluetoothAdapter.getDefaultAdapter();
     private final List<GnssListener> mLoggers;
 
     private final LocationManager mLocationManager;

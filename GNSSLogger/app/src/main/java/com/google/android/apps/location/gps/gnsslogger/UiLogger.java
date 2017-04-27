@@ -17,6 +17,8 @@
 package com.google.android.apps.location.gps.gnsslogger;
 
 import android.graphics.Color;
+import android.location.GnssClock;
+import android.location.GnssMeasurement;
 import android.location.GnssMeasurementsEvent;
 import android.location.GnssNavigationMessage;
 import android.location.GnssStatus;
@@ -24,8 +26,15 @@ import android.location.Location;
 import android.location.LocationProvider;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.StringBuilderPrinter;
+
+
 import com.google.android.apps.location.gps.gnsslogger.LoggerFragment.UIFragmentComponent;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
+
+import static android.content.ContentValues.TAG;
 
 /**
  * A class representing a UI logger for the application. Its responsibility is show information in
@@ -46,6 +55,38 @@ public class UiLogger implements GnssListener {
 
     public synchronized void setUiFragmentComponent(UIFragmentComponent value) {
         mUiFragmentComponent = value;
+    }
+
+    private void logText(String tag, String text, int color) {
+        UIFragmentComponent component = getUiFragmentComponent();
+        if (component != null) {
+            component.logTextFragment(tag, text, color);
+        }
+    }
+    private void logEvent(String tag, String message, int color) {
+        String composedTag = GnssContainer.TAG + tag;
+        Log.d(composedTag, message);
+        logText(tag, message, color);
+    }
+
+    private void logMeasurementEvent(String event) {
+        logEvent("Measurement", event, USED_COLOR);
+    }
+
+    private void logNavigationMessageEvent(String event) {
+        logEvent("NavigationMsg", event, USED_COLOR);
+    }
+
+    private void logStatusEvent(String event) {
+        logEvent("Status", event, USED_COLOR);
+    }
+
+    private void logNmeaEvent(String event) {
+        logEvent("Nmea", event, USED_COLOR);
+    }
+
+    private void logLocationEvent(String event) {
+        logEvent("Location", event, USED_COLOR);
     }
 
     @Override
@@ -74,7 +115,19 @@ public class UiLogger implements GnssListener {
 
     @Override
     public void onGnssMeasurementsReceived(GnssMeasurementsEvent event) {
-        logMeasurementEvent("onGnsssMeasurementsReceived: " + event);
+        //int mGMsize;
+        Measurement mMeasurement;
+        GnssClock mGnssClock=event.getClock();
+        Collection<GnssMeasurement> mGnssMeasurements=event.getMeasurements();
+        logMeasurementEvent("onGnssMeasurementsReceived:C1,L1,S1");
+        for(GnssMeasurement mGnssMeasurement:mGnssMeasurements){
+            mMeasurement=new Measurement(mGnssMeasurement,mGnssClock);
+            String sC1=""+mMeasurement.getC1();
+            String sL1=""+mMeasurement.getL1();
+            String sS1=""+mMeasurement.getS1();
+            logMeasurementEvent(sC1 + ","+sL1+","+sS1);
+        }
+        //logMeasurementEvent("onGnsssMeasurementsReceived: " + builder);
     }
 
     @Override
@@ -105,35 +158,6 @@ public class UiLogger implements GnssListener {
     @Override
     public void onListenerRegistration(String listener, boolean result) {
         logEvent("Registration", String.format("add%sListener: %b", listener, result), USED_COLOR);
-    }
-
-    private void logMeasurementEvent(String event) {
-        logEvent("Measurement", event, USED_COLOR);
-    }
-
-    private void logNavigationMessageEvent(String event) {
-        logEvent("NavigationMsg", event, USED_COLOR);
-    }
-
-    private void logStatusEvent(String event) {
-        logEvent("Status", event, USED_COLOR);
-    }
-
-    private void logNmeaEvent(String event) {
-        logEvent("Nmea", event, USED_COLOR);
-    }
-
-    private void logEvent(String tag, String message, int color) {
-        String composedTag = GnssContainer.TAG + tag;
-        Log.d(composedTag, message);
-        logText(tag, message, color);
-    }
-
-    private void logText(String tag, String text, int color) {
-        UIFragmentComponent component = getUiFragmentComponent();
-        if (component != null) {
-            component.logTextFragment(tag, text, color);
-        }
     }
 
     private String locationStatusToString(int status) {
@@ -193,10 +217,6 @@ public class UiLogger implements GnssListener {
         }
         builder.append("]");
         return builder.toString();
-    }
-
-    private void logLocationEvent(String event) {
-        logEvent("Location", event, USED_COLOR);
     }
 
     private String getConstellationName(int id) {

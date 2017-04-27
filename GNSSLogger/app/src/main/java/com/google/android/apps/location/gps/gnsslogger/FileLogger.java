@@ -1,19 +1,8 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+修改作者：张楷时 Cash
+修改时间：2017.04
+修改内容：重新编写GnssLogger软件的输出文件格式，使之符合RINEX文件要求
  */
-
 package com.google.android.apps.location.gps.gnsslogger;
 
 import android.content.Context;
@@ -39,6 +28,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -49,24 +39,27 @@ import java.util.Locale;
 public class FileLogger implements GnssListener {
 
     private static final String TAG = "FileLogger";
-    private static final String FILE_PREFIX = "pseudoranges";
+    private static final String FILE_PREFIX = "ObsFile";
     private static final String ERROR_WRITING_FILE = "Problem writing to file.";
     private static final String COMMENT_START = "# ";
     private static final char RECORD_DELIMITER = ',';
     private static final String VERSION_TAG = "Version: ";
     private static final String FILE_VERSION = "1.4.0.0, Platform: N";
-
+    public final static int MAXTOWUNCNS=500;
+    public final static int MAXPRRUNCMPS=20;
+    public final static int MINCN0DBHZ=20;
+    public final static int MAXGPSSVID=32;
+    public final static int DAYSEC=24*3600;
+    public final static int HOURSEC=3600;
+    public final static int MINSEC=60;
+    public final static int[]	monthDays={31,28,31,30,31,30,31,31,30,31,30,31};
     private static final int MAX_FILES_STORED = 100;
     private static final int MINIMUM_USABLE_FILE_SIZE_BYTES = 1000;
-
     private final Context mContext;
-
     private final Object mFileLock = new Object();
     private BufferedWriter mFileWriter;
     private File mFile;
-
     private UIFragmentComponent mUiComponent;
-
     public synchronized UIFragmentComponent getUiComponent() {
         return mUiComponent;
     }
@@ -99,7 +92,7 @@ public class FileLogger implements GnssListener {
 
             SimpleDateFormat formatter = new SimpleDateFormat("yyy_MM_dd_HH_mm_ss");
             Date now = new Date();
-            String fileName = String.format("%s_log_%s.txt", FILE_PREFIX, formatter.format(now));
+            String fileName = String.format("%s_log_%s.obs", FILE_PREFIX, formatter.format(now));
             File currentFile = new File(baseDirectory, fileName);
             String currentFilePath = currentFile.getAbsolutePath();
             BufferedWriter currentFileWriter;
@@ -112,44 +105,22 @@ public class FileLogger implements GnssListener {
 
             // initialize the contents of the file
             try {
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.newLine();
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.write("Header Description:");
-                currentFileWriter.newLine();
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.newLine();
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.write(VERSION_TAG);
-                currentFileWriter.write(FILE_VERSION);
-                currentFileWriter.newLine();
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.newLine();
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.write(
-                        "Raw,ElapsedRealtimeMillis,TimeNanos,LeapSecond,TimeUncertaintyNanos,FullBiasNanos,"
-                                + "BiasNanos,BiasUncertaintyNanos,DriftNanosPerSecond,DriftUncertaintyNanosPerSecond,"
-                                + "HardwareClockDiscontinuityCount, Svid,TimeOffsetNanos,State,ReceivedSvTimeNanos,"
-                                + "ReceivedSvTimeUncertaintyNanos,Cn0DbHz,PseudorangeRateMetersPerSecond,"
-                                + "PseudorangeRateUncertaintyMetersPerSecond,"
-                                + "AccumulatedDeltaRangeState,AccumulatedDeltaRangeMeters,"
-                                + "AccumulatedDeltaRangeUncertaintyMeters,CarrierFrequencyHz,CarrierCycles,"
-                                + "CarrierPhase,CarrierPhaseUncertainty,MultipathIndicator,SnrInDb,"
-                                + "ConstellationType");
-                currentFileWriter.newLine();
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.newLine();
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.write(
-                        "Fix,Provider,Latitude,Longitude,Altitude,Speed,Accuracy,(UTC)TimeInMs");
-                currentFileWriter.newLine();
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.newLine();
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.write("Nav,Svid,Type,Status,MessageId,Sub-messageId,Data(Bytes)");
-                currentFileWriter.newLine();
-                currentFileWriter.write(COMMENT_START);
-                currentFileWriter.newLine();
+                Log.d(TAG,"Start Write File");
+                currentFileWriter.write("     2.11           OBSERVATION DATA    G (GPS)                    RINEX VERSION / TYPE\n");
+                currentFileWriter.write("LoggerReader        CASHZHANG WHU       ");
+                SimpleDateFormat formatter2 = new SimpleDateFormat("yyyyMMdd HHmmss");
+                currentFileWriter.write(String.format(formatter2.format(now))+" UTC PGM / RUN BY / DATE\n");
+                currentFileWriter.write("                                                            MARKER NAME\n");
+                currentFileWriter.write("                                                            OBSERVER / AGENCY\n");
+                currentFileWriter.write("                                                            REC # / TYPE / VERS\n");
+                currentFileWriter.write("                                                            ANT # / TYPE\n");
+                currentFileWriter.write("-2267662.7966  5008768.0193  3221937.1078                  APPROX POSITION XYZ\n");
+                currentFileWriter.write("0.0000        0.0000        0.0000                  ANTENNA: DELTA H/E/N\n");
+                currentFileWriter.write("1     0                                                WAVELENGTH FACT L1/2\n");
+                currentFileWriter.write("3    C1    L1    S1                                    # / TYPES OF OBSERV\n");
+                SimpleDateFormat formatter3 = new SimpleDateFormat("  yyyy    MM    dd    HH    mm   ss");
+                currentFileWriter.write(String.format(formatter3.format(now))+".0000000     GPS         TIME OF FIRST OBS\n");
+                currentFileWriter.write("                                                            END OF HEADER\n");
             } catch (IOException e) {
                 logException("Count not initialize file: " + currentFilePath, e);
                 return;
@@ -186,9 +157,9 @@ public class FileLogger implements GnssListener {
         }
     }
 
-    /**
-     * Send the current log via email or other options selected from a pop menu shown to the user. A
-     * new log is started when calling this function.
+    /*
+      Send the current log via email or other options selected from a pop menu shown to the user. A
+      new log is started when calling this function.
      */
     public void send() {
         if (mFile == null) {
@@ -221,6 +192,7 @@ public class FileLogger implements GnssListener {
 
     @Override
     public void onLocationChanged(Location location) {
+        /*
         if (location.getProvider().equals(LocationManager.GPS_PROVIDER)) {
             synchronized (mFileLock) {
                 if (mFileWriter == null) {
@@ -245,6 +217,7 @@ public class FileLogger implements GnssListener {
                 }
             }
         }
+    */
     }
 
     @Override
@@ -257,9 +230,16 @@ public class FileLogger implements GnssListener {
                 return;
             }
             GnssClock gnssClock = event.getClock();
-            for (GnssMeasurement measurement : event.getMeasurements()) {
+            Collection<GnssMeasurement>gnssMeasurements =event.getMeasurements();
+            try {
+                WriteGnssClockToFile(gnssClock,gnssMeasurements);
+            }catch (IOException e) {
+                logException(ERROR_WRITING_FILE, e);
+            }
+
+            for (GnssMeasurement gnssMeasurement : gnssMeasurements) {
                 try {
-                    writeGnssMeasurementToFile(gnssClock, measurement);
+                    writeGnssMeasurementToFile(gnssClock, gnssMeasurement);
                 } catch (IOException e) {
                     logException(ERROR_WRITING_FILE, e);
                 }
@@ -267,11 +247,50 @@ public class FileLogger implements GnssListener {
         }
     }
 
+    private void WriteGnssClockToFile(GnssClock gnssClock,Collection<GnssMeasurement> gnssMeasurements)
+            throws IOException{
+        GpsTime Gtime=new GpsTime(gnssClock);
+        Log.d(TAG,"Start write clock");
+        int year = Gtime.getYear();
+        int mon = Gtime.getMonth();
+        int date = Gtime.getDate();
+        int hour = Gtime.getHour();
+        int min = Gtime.getMin();
+        double sec = Gtime.getSec();
+        int num=0;
+        String ASvid="";
+        for (GnssMeasurement gnssMeasurement : gnssMeasurements){
+            boolean ibad=MeasurementFilter(gnssClock,gnssMeasurement);
+            if(!ibad) {
+                ASvid += "G" + gnssMeasurement.getSvid();
+                num++;
+            }
+        }
+        String line=String.format("%3d%3d%3d%3d%3d%11.7f%3d%3d",year-2000,mon,date,hour,min,sec,0,num);
+        mFileWriter.write(line+ASvid+"\n");
+        Log.d(TAG,"write clock Success!");
+    }
+
+    private void writeGnssMeasurementToFile(GnssClock clock, GnssMeasurement gnssMeasurement)
+            throws IOException {
+        boolean ibad=MeasurementFilter(clock,gnssMeasurement);
+        if(!ibad) {
+            Measurement measurement = new Measurement(gnssMeasurement, clock);
+            Log.d(TAG, "Start write measurement!");
+            double C1 = measurement.getC1();
+            double L1 = measurement.getL1();
+            double S1 = measurement.getS1();
+            String line = String.format("%14.3f%16.3f%16.3f\n", C1, L1, S1);
+            mFileWriter.write(line);
+            Log.d(TAG, "Write measurement Success!");
+        }
+    }
+
     @Override
     public void onGnssMeasurementsStatusChanged(int status) {}
 
     @Override
-    public void onGnssNavigationMessageReceived(GnssNavigationMessage navigationMessage) {
+    public void onGnssNavigationMessageReceived(GnssNavigationMessage navigationMessage) {/*
         synchronized (mFileLock) {
             if (mFileWriter == null) {
                 return;
@@ -301,7 +320,7 @@ public class FileLogger implements GnssListener {
                 logException(ERROR_WRITING_FILE, e);
             }
         }
-    }
+    */}
 
     @Override
     public void onGnssNavigationMessageStatusChanged(int status) {}
@@ -314,52 +333,6 @@ public class FileLogger implements GnssListener {
 
     @Override
     public void onListenerRegistration(String listener, boolean result) {}
-
-    private void writeGnssMeasurementToFile(GnssClock clock, GnssMeasurement measurement)
-            throws IOException {
-        String clockStream =
-                String.format(
-                        "Raw,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
-                        SystemClock.elapsedRealtime(),
-                        clock.getTimeNanos(),
-                        clock.hasLeapSecond() ? clock.getLeapSecond() : "",
-                        clock.hasTimeUncertaintyNanos() ? clock.getTimeUncertaintyNanos() : "",
-                        clock.getFullBiasNanos(),
-                        clock.hasBiasNanos() ? clock.getBiasNanos() : "",
-                        clock.hasBiasUncertaintyNanos() ? clock.getBiasUncertaintyNanos() : "",
-                        clock.hasDriftNanosPerSecond() ? clock.getDriftNanosPerSecond() : "",
-                        clock.hasDriftUncertaintyNanosPerSecond()
-                                ? clock.getDriftUncertaintyNanosPerSecond()
-                                : "",
-                        clock.getHardwareClockDiscontinuityCount() + ",");
-        mFileWriter.write(clockStream);
-
-        String measurementStream =
-                String.format(
-                        "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s",
-                        measurement.getSvid(),
-                        measurement.getTimeOffsetNanos(),
-                        measurement.getState(),
-                        measurement.getReceivedSvTimeNanos(),
-                        measurement.getReceivedSvTimeUncertaintyNanos(),
-                        measurement.getCn0DbHz(),
-                        measurement.getPseudorangeRateMetersPerSecond(),
-                        measurement.getPseudorangeRateUncertaintyMetersPerSecond(),
-                        measurement.getAccumulatedDeltaRangeState(),
-                        measurement.getAccumulatedDeltaRangeMeters(),
-                        measurement.getAccumulatedDeltaRangeUncertaintyMeters(),
-                        measurement.hasCarrierFrequencyHz() ? measurement.getCarrierFrequencyHz() : "",
-                        measurement.hasCarrierCycles() ? measurement.getCarrierCycles() : "",
-                        measurement.hasCarrierPhase() ? measurement.getCarrierPhase() : "",
-                        measurement.hasCarrierPhaseUncertainty()
-                                ? measurement.getCarrierPhaseUncertainty()
-                                : "",
-                        measurement.getMultipathIndicator(),
-                        measurement.hasSnrInDb() ? measurement.getSnrInDb() : "",
-                        measurement.getConstellationType());
-        mFileWriter.write(measurementStream);
-        mFileWriter.newLine();
-    }
 
     private void logException(String errorMessage, Exception e) {
         Log.e(GnssContainer.TAG + TAG, errorMessage, e);
@@ -385,7 +358,7 @@ public class FileLogger implements GnssListener {
         /**
          * Returns {@code true} to delete the file, and {@code false} to keep the file.
          *
-         * <p>Files are deleted if they are not in the {@link FileToDeleteFilter#mRetainedFiles} list.
+         * Files are deleted if they are not in the {@link FileToDeleteFilter#mRetainedFiles} list.
          */
         @Override
         public boolean accept(File pathname) {
@@ -397,5 +370,24 @@ public class FileLogger implements GnssListener {
             }
             return pathname.length() < MINIMUM_USABLE_FILE_SIZE_BYTES;
         }
+    }
+
+    private boolean MeasurementFilter(GnssClock gnssClock,GnssMeasurement gnssMeasurement){
+        boolean iBad;
+        boolean iRcTime;
+        boolean iPrRate;
+        boolean iCn0DbHz;
+        boolean nGps;
+        boolean iADRU;
+        boolean iPr;
+        iRcTime=gnssMeasurement.getReceivedSvTimeUncertaintyNanos()>MAXTOWUNCNS;
+        iPrRate=gnssMeasurement.getPseudorangeRateUncertaintyMetersPerSecond()>MAXPRRUNCMPS;
+        iCn0DbHz=gnssMeasurement.getCn0DbHz()<MINCN0DBHZ;
+        nGps=gnssMeasurement.getSvid()>MAXGPSSVID|gnssMeasurement.getConstellationType()>1;
+        iADRU=gnssMeasurement.getAccumulatedDeltaRangeUncertaintyMeters()>0.01|gnssMeasurement.getAccumulatedDeltaRangeState()>1;
+        Measurement measurement=new Measurement(gnssMeasurement,gnssClock);
+        iPr=measurement.getC1()>99999999.999|measurement.getC1()<=0;
+        iBad=iRcTime|iPrRate|iCn0DbHz|nGps|iADRU|iPr;
+        return iBad;
     }
 }

@@ -36,31 +36,32 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-    <TextView
-        android:id="@+id/log_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        <TextView
+            android:id="@+id/log_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
     </ScrollView>
 
     <LinearLayout
-        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="1">
 
         <Button
             android:id="@+id/start_logs"
-            android:text="Start Log"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"/>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.61"
+            android:text="Start Log" />
 
         <Button
             android:id="@+id/send_file"
-            android:text="Stop &amp; Send"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"/>
+            android:layout_weight="0.42"
+            android:text="Stop &amp; Send" />
 
     </LinearLayout>
 
