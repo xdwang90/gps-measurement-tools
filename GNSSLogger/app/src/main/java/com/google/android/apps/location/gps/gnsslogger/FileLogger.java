@@ -13,14 +13,14 @@ import android.location.GnssMeasurementsEvent;
 import android.location.GnssNavigationMessage;
 import android.location.GnssStatus;
 import android.location.Location;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
+
 import com.google.android.apps.location.gps.gnsslogger.LoggerFragment.UIFragmentComponent;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
@@ -31,10 +31,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * A GNSS logger to store information to a file.
+ * 伙计们好
  */
 public class FileLogger implements GnssListener {
 
